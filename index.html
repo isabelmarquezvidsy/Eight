@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Survey Application</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <!-- React, ReactDOM, and Babel for JSX transformation -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // Helper functions for generating realistic data
+        const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        const generateRandomMobile = (country) => {
+          const countryCodes = {
+            "USA": "+1", "UK": "+44", "Canada": "+1", "France": "+33", "Germany": "+49",
+            "Spain": "+34", "Japan": "+81", "China": "+86"
+          };
+          const code = countryCodes[country];
+          if (!code) return null;
+
+          let number;
+          switch (country) {
+            case "USA": case "Canada":
+              number = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
+              break;
+            case "UK":
+              number = `7${Math.floor(100000000 + Math.random() * 900000000)}`;
+              break;
+            case "France":
+              number = `6${Math.floor(100000000 + Math.random() * 900000000)}`;
+              break;
+            case "Germany":
+              number = `1${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+              break;
+            case "Spain":
+              number = `6${Math.floor(100000000 + Math.random() * 900000000)}`;
+              break;
+            case "Japan":
+              number = `90-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
+              break;
+            case "China":
+              number = `1${Math.floor(3000000000 + Math.random() * 6000000000)}`;
+              break;
+            default:
+              number = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+          }
+          return `${code} ${number}`;
+        };
+
+        const generateRandomAddress = (country) => {
+          const addresses = {
+            "USA": [
+              "123 Main St, Anytown, CA 90210, USA", "456 Oak Ave, Springfield, IL 62704, USA",
+              "789 Pine Ln, Metropolis, NY 10001, USA", "101 Elm Rd, Gotham, TX 62704, USA",
+              "202 Maple Dr, Star City, FL 33101, USA"
+            ],
+            "UK": [
+              "Flat 4, 10 Downing St, Westminster, London, SW1A 2AA, UK",
+              "The Cottage, High Street, Little Whinging, Surrey, GU1 1AB, UK",
+              "221B Baker Street, Marylebone, London, NW1 6XE, UK",
+              "1A Coronation Street, Weatherfield, Manchester, M1 1AA, UK",
+              "Willow Creek Farm, Rural Lane, Bristol, BS1 1AB, UK"
+            ],
+            "Canada": [
+              "100 Queen St W, Toronto, ON M5H 2N2, Canada", "250 Yonge St, Vancouver, BC V6B 1M8, Canada",
+              "500 Rue Saint-Paul Ouest, Montreal, QC H2Y 2Y1, Canada", "888 Bay St, Ottawa, ON K1P 5P6, Canada",
+              "300 King St E, Calgary, AB T2G 2K3, Canada"
+            ],
+            "France": [
+              "10 Rue de la Paix, 75002 Paris, France", "25 Avenue des Champs-Élysées, 75008 Paris, France",
+              "5 Place Bellecour, 69002 Lyon, France", "1 Rue de la Liberté, 06000 Nice, France",
+              "12 Boulevard de la Croisette, 06400 Cannes, France"
+            ],
+            "Germany": [
+              "Unter den Linden 77, 10117 Berlin, Germany", "Marienplatz 1, 80331 Munich, Germany",
+              "Reeperbahn 1, 20359 Hamburg, Germany", "Zeil 1, 60313 Frankfurt am Main, Germany",
+              "Hohe Str. 1, 50667 Cologne, Germany"
+            ],
+            "Spain": [
+              "Calle Mayor 1, 28013 Madrid, Spain", "La Rambla 1, 08002 Barcelona, Spain",
+              "Plaza de España 1, 41004 Seville, Spain", "Gran Vía 1, 28013 Madrid, Spain",
+              "Paseo de Gracia 1, 08007 Barcelona, Spain"
+            ],
+            "Japan": [
+              "1-1-1 Marunouchi, Chiyoda-ku, Tokyo 100-0005, Japan", "2-2-2 Umeda, Kita-ku, Osaka 530-0001, Japan",
+              "3-3-3 Chuo, Naka-ku, Nagoya 460-0003, Japan", "4-4-4 Hakata-eki-mae, Hakata-ku, Fukuoka 812-0012, Japan",
+              "5-5-5 Kita-ku, Sapporo 060-0001, Japan"
+            ],
+            "China": [
+              "1 Wangfujing Street, Dongcheng District, Beijing 100006, China", "2 Nanjing Road East, Huangpu District, Shanghai 200002, China",
+              "3 Tianhe Road, Tianhe District, Guangzhou 510620, China", "4 Chunxi Road, Jinjiang District, Chengdu 610021, China",
+              "5 Jiefangbei Street, Yuzhong District, Chongqing 400000, China"
+            ]
+          };
+          return getRandomElement(addresses[country]);
+        };
+
+        const countries = ["USA", "UK", "Canada", "France", "Germany", "Spain", "Japan", "China"];
+
+        // Function to generate the 100 creator profiles
+        const generateCreators = () => {
+          const creatorsList = [];
+          for (let i = 0; i < 100; i++) {
+            const hasAddressAndMobile = Math.random() < 0.5; // 50% chance for Address and Mobile
+            const randomCountry = getRandomElement(countries);
+            const creator = {
+              name: `Creator ${i + 1}`, // Name is 100% known
+              portfolio: `https://portfolio.com/creator${i + 1}`, // Portfolio is 100% known
+            };
+
+            if (hasAddressAndMobile) {
+              creator.address = generateRandomAddress(randomCountry);
+              creator.mobile = generateRandomMobile(randomCountry);
+            }
+            creatorsList.push(creator);
+          }
+          return creatorsList;
+        };
+
+        // Main App Component
+        const App = () => {
+          const [currentPage, setCurrentPage] = useState('internal'); // 'internal' or 'creator'
+          const [creators, setCreators] = useState([]); // Stores the generated creators
+          const [surveyData, setSurveyData] = useState({ // In-memory survey data
+            projectTitle: 'SBLY Media / Ready for Some Pillow Talk?',
+            projectCode: 'VUS002-165.2',
+            briefRequirementSummary: '🇺🇸 US-based women.\n✨ Aged 20-54.',
+            questions: []
+          });
+
+          // Generate creators on component mount
+          useEffect(() => {
+            setCreators(generateCreators());
+          }, []); // Empty dependency array means it runs once on mount
+
+          return (
+            <div className="min-h-screen bg-gray-100 font-inter">
+              {currentPage === 'internal' ? (
+                <InternalPage
+                  setCurrentPage={setCurrentPage}
+                  surveyData={surveyData}
+                  setSurveyData={setSurveyData} // Pass setter for in-memory updates
+                />
+              ) : (
+                <CreatorPage
+                  setCurrentPage={setCurrentPage}
+                  creators={creators} // Pass generated creators
+                  surveyData={surveyData}
+                />
+              )}
+            </div>
+          );
+        };
+
+        // Internal (Backstage) Page Component
+        const InternalPage = ({ setCurrentPage, surveyData, setSurveyData }) => {
+          const [projectTitle, setProjectTitle] = useState(surveyData.projectTitle);
+          const [projectCode, setProjectCode] = useState(surveyData.projectCode);
+          const [briefRequirementSummary, setBriefRequirementSummary] = useState(surveyData.briefRequirementSummary);
+          const [showQuestionTemplates, setShowQuestionTemplates] = useState(false);
+          const [questions, setQuestions] = useState(surveyData.questions);
+          const [message, setMessage] = useState('');
+
+          // Update parent state (surveyData) when local state changes
+          useEffect(() => {
+            setSurveyData({
+              projectTitle,
+              projectCode,
+              briefRequirementSummary,
+              questions
+            });
+          }, [projectTitle, projectCode, briefRequirementSummary, questions, setSurveyData]);
+
+          const handleSaveSurvey = useCallback(() => {
+            setMessage("Survey details updated in memory (not saved persistently).");
+          }, []);
+
+          const addQuestion = useCallback((type) => {
+            const newQuestion = {
+              id: Date.now(),
+              type: type,
+              questionText: '',
+              description: '',
+              isRequired: false,
+              image: null,
+              answerPlaceholder: getAnswerPlaceholder(type),
+              icon: getQuestionIcon(type),
+              title: getQuestionTitle(type),
+              options: (type.includes('Multiple Choice')) ? [] : [],
+              isMultipleSelection: false,
+              addressFields: {
+                addressLine1: '', addressLine2: '', city: '',
+                stateRegionProvince: '', zipPostCode: '', country: ''
+              },
+              mobileNumberPlaceholder: '',
+              uploadedImage: null,
+              uploadedFileName: ''
+            };
+            if (type === 'Multiple Choice (15 or less options)') {
+              newQuestion.options.push({ id: 'A', text: '' });
+            }
+            setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+            setShowQuestionTemplates(false);
+          }, []);
+
+          const updateQuestion = useCallback((id, field, value) => {
+            setQuestions(prevQuestions => prevQuestions.map(q =>
+              q.id === id ? { ...q, [field]: value } : q
+            ));
+          }, []);
+
+          const updateOption = useCallback((questionId, optionId, newText) => {
+            setQuestions(prevQuestions => prevQuestions.map(q =>
+              q.id === questionId
+                ? {
+                    ...q,
+                    options: q.options.map(opt =>
+                      opt.id === optionId ? { ...opt, text: newText } : opt
+                    ),
+                  }
+                : q
+            ));
+          }, []);
+
+          const addOption = useCallback((questionId) => {
+            setQuestions(prevQuestions => prevQuestions.map(q => {
+              if (q.id === questionId) {
+                const newOptionId = String.fromCharCode(65 + q.options.length);
+                return {
+                  ...q,
+                  options: [...q.options, { id: newOptionId, text: '' }],
+                };
+              }
+              return q;
+            }));
+          }, []);
+
+          const updateAddressField = useCallback((questionId, fieldName, value) => {
+            setQuestions(prevQuestions => prevQuestions.map(q =>
+              q.id === questionId
+                ? {
+                    ...q,
+                    addressFields: {
+                      ...q.addressFields,
+                      [fieldName]: value
+                    }
+                  }
+                : q
+            ));
+          }, []);
+
+          const updateMobileNumberPlaceholder = useCallback((questionId, value) => {
+            setQuestions(prevQuestions => prevQuestions.map(q =>
+              q.id === questionId ? { ...q, mobileNumberPlaceholder: value } : q
+            ));
+          }, []);
+
+          const updateUploadedPhoto = useCallback((questionId, imageUrl, fileName) => {
+            setQuestions(prevQuestions => prevQuestions.map(q =>
+              q.id === questionId ? { ...q, uploadedImage: imageUrl, uploadedFileName: fileName } : q
+            ));
+          }, []);
+
+          const removeQuestion = useCallback((id) => {
+            setQuestions(prevQuestions => prevQuestions.filter(q => q.id !== id));
+          }, []);
+
+          const getAnswerPlaceholder = (type) => {
+            switch (type) {
+              case 'Short Text Answer':
+              case 'Long Text Answer':
+                return 'Type your answer here';
+              case 'Mobile number':
+                return 'Enter mobile number';
+              case 'Address':
+                return 'Enter address';
+              case 'Multiple Choice (15 or less options)':
+              case 'Multiple choice (more than 15)':
+                return 'Type or select an option';
+              case 'Photo Upload':
+                return 'Upload your photo';
+              case 'Read Only Text':
+                return '';
+              default:
+                return 'Enter your response';
+            }
+          };
+
+          const getQuestionIcon = (type) => {
+            switch (type) {
+              case 'Short Text Answer': return '📝';
+              case 'Long Text Answer': return '📄';
+              case 'Mobile number': return '📱';
+              case 'Address': return '📍';
+              case 'Multiple Choice (15 or less options)':
+              case 'Multiple choice (more than 15)': return '✅';
+              case 'Photo Upload': return '📸';
+              case 'Read Only Text': return '📖';
+              default: return '❓';
+            }
+          };
+
+          const getQuestionTitle = (type) => {
+            switch (type) {
+              case 'Short Text Answer': return 'Short Text Answer';
+              case 'Long Text Answer': return 'Long Text Answer';
+              case 'Mobile number': return 'Mobile Number';
+              case 'Address': return 'Address';
+              case 'Multiple Choice (15 or less options)': return 'Multiple Choice (15 or less options)';
+              case 'Multiple choice (more than 15)': return 'Multiple choice (more than 15)';
+              case 'Photo Upload': return 'Photo Upload';
+              case 'Read Only Text': return 'Read Only Text';
+              default: return 'New Question';
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+              <div className="w-full max-w-7xl bg-white shadow-lg rounded-xl p-6 sm:p-8 lg:p-10">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Internal</h1>
+                  <button
+                    onClick={() => setCurrentPage('creator')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out"
+                  >
+                    View Creator Side (answer questions)
+                  </button>
+                </div>
+
+                <div className="space-y-6 mb-8">
+                  <div>
+                    <label htmlFor="projectTitle" className="block text-lg font-medium text-gray-700 mb-2">Survey Title</label>
+                    <input
+                      type="text"
+                      id="projectTitle"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg"
+                      value={projectTitle}
+                      onChange={(e) => setProjectTitle(e.target.value)}
+                      placeholder="Enter survey title"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="projectCode" className="block text-lg font-medium text-gray-700 mb-2">Project Code</label>
+                    <input
+                      type="text"
+                      id="projectCode"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg"
+                      value={projectCode}
+                      onChange={(e) => setProjectCode(e.target.value)}
+                      placeholder="Enter project code"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="briefSummary" className="block text-lg font-medium text-gray-700 mb-2">Brief requirement summary</label>
+                    <textarea
+                      id="briefSummary"
+                      rows="6"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg resize-y"
+                      value={briefRequirementSummary}
+                      onChange={(e) => setBriefRequirementSummary(e.target.value)}
+                      placeholder="Provide a brief summary of the project requirements"
+                    ></textarea>
+                  </div>
+
+                  <button
+                    onClick={handleSaveSurvey}
+                    className="w-full py-3 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200 ease-in-out text-lg font-semibold"
+                  >
+                    Save Survey Details
+                  </button>
+                  {message && <p className="mt-4 text-center text-sm text-gray-600">{message}</p>}
+                </div>
+
+                <div className="mt-8 border-t border-gray-200 pt-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">Questions</h2>
+                  <div className="flex items-center space-x-4 mb-6">
+                    <button
+                      onClick={() => setShowQuestionTemplates(!showQuestionTemplates)}
+                      className="flex items-center justify-center w-12 h-12 bg-gray-200 text-gray-600 rounded-full hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 transition duration-200 ease-in-out text-2xl font-bold"
+                      aria-label="Add question"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => setShowQuestionTemplates(!showQuestionTemplates)}
+                      className="px-6 py-3 bg-gray-700 text-white rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-75 transition duration-200 ease-in-out text-lg font-semibold"
+                    >
+                      Add a question
+                    </button>
+                  </div>
+
+                  {showQuestionTemplates && (
+                    <QuestionTemplates onSelectTemplate={addQuestion} />
+                  )}
+
+                  <div className="space-y-6">
+                    {questions.map((q, index) => (
+                      <QuestionEditor
+                        key={q.id}
+                        question={q}
+                        updateQuestion={updateQuestion}
+                        removeQuestion={removeQuestion}
+                        addOption={addOption}
+                        updateOption={updateOption}
+                        updateAddressField={updateAddressField}
+                        updateMobileNumberPlaceholder={updateMobileNumberPlaceholder}
+                        updateUploadedPhoto={updateUploadedPhoto}
+                        questionNumber={index + 1}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // Question Templates Component (STEP 1)
+        const QuestionTemplates = ({ onSelectTemplate }) => {
+          const questionTypes = [
+            { name: 'Short Text Answer', icon: '📝' },
+            { name: 'Long Text Answer', icon: '📄' },
+            { name: 'Multiple Choice (15 or less options)', icon: '✅' },
+            { name: 'Multiple choice (more than 15)', icon: '✅' },
+            { name: 'Mobile number', icon: '📱', },
+            { name: 'Address', icon: '📍' },
+            { name: 'Photo Upload', icon: '📸' },
+            { name: 'Read Only Text', icon: '📖' },
+          ];
+
+          return (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-md p-6 mb-8">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">Question types</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {questionTypes.map((type) => (
+                  <button
+                    key={type.name}
+                    onClick={() => onSelectTemplate(type.name)}
+                    className="flex items-center space-x-3 p-4 border border-gray-300 rounded-lg text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out"
+                  >
+                    <span className="text-2xl">{type.icon}</span>
+                    <span className="text-lg font-medium text-gray-700">{type.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        };
+
+        // Add Choices Modal Component
+        const AddChoicesModal = ({ isOpen, onClose, onSave, initialChoices }) => {
+          const [choicesText, setChoicesText] = useState(initialChoices.map(opt => opt.text).join('\n'));
+
+          useEffect(() => {
+            setChoicesText(initialChoices.map(opt => opt.text).join('\n'));
+          }, [initialChoices, isOpen]);
+
+          const handleSave = () => {
+            const newOptions = choicesText.split('\n').filter(line => line.trim() !== '').map((line, index) => ({
+              id: `${Date.now()}-${index}`,
+              text: line.trim(),
+            }));
+            onSave(newOptions);
+          };
+
+          if (!isOpen) return null;
+
+          return (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Add choices</h2>
+                <p className="text-gray-600 mb-4">Write or paste your choices below. Each choice must be on a separate line.</p>
+                <textarea
+                  className="w-full h-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-y"
+                  placeholder="Your choices go here&#10;One per line&#10;Like this&#10;:-)"
+                  value={choicesText}
+                  onChange={(e) => setChoicesText(e.target.value)}
+                ></textarea>
+                <div className="flex justify-end space-x-3 mt-4">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+                  >
+                    Save choices
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+
+        // Individual Question Editor Component (STEP 2 & 3)
+        const QuestionEditor = ({ question, updateQuestion, removeQuestion, addOption, updateOption, updateAddressField, updateMobileNumberPlaceholder, updateUploadedPhoto, questionNumber }) => {
+          // Refs for the textarea elements
+          const questionTextRef = useRef(null);
+          const descriptionRef = useRef(null);
+          const [isModalOpen, setIsModalOpen] = useState(false);
+
+          // Effect to adjust textarea heights on mount and content change
+          useEffect(() => {
+            if (questionTextRef.current) {
+              questionTextRef.current.style.height = 'auto';
+              questionTextRef.current.style.height = questionTextRef.current.scrollHeight + 'px';
+            }
+            if (descriptionRef.current) {
+              descriptionRef.current.style.height = 'auto';
+              descriptionRef.current.style.height = descriptionRef.current.scrollHeight + 'px';
+            }
+          }, [question.questionText, question.description]);
+
+          const handleSaveChoices = (newOptions) => {
+            updateQuestion(question.id, 'options', newOptions);
+            setIsModalOpen(false);
+          };
+
+          const handleImageUpload = (event) => {
+            // Simulate image upload with a placeholder URL
+            const imageUrl = "https://placehold.co/400x200/E0E0E0/333333?text=Uploaded+Image"; // This is for the "Add a picture" setting
+            updateQuestion(question.id, 'image', imageUrl);
+          };
+
+          const handleImageRemove = () => {
+            updateQuestion(question.id, 'image', null);
+          };
+
+          const handlePhotoUploadPreview = (event) => {
+            // Simulate photo upload for the Photo Upload question type
+            const dummyImageUrl = "https://i.ibb.co/L51t08r/googly-eyes.png"; // Dummy googly eyes image
+            const dummyFileName = "googly.png";
+            updateUploadedPhoto(question.id, dummyImageUrl, dummyFileName);
+          };
+
+          const handleRemoveUploadedPhoto = () => {
+            updateUploadedPhoto(question.id, null, '');
+          };
+
+
+          return (
+            <div className="flex flex-col lg:flex-row gap-4 p-4 border border-gray-200 rounded-xl bg-gray-50 shadow-sm relative">
+              {/* Question Number */}
+              <div className="absolute -top-3 -left-3 bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md z-10">
+                {questionNumber}
+              </div>
+
+              {/* Question Type Label */}
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gray-50 px-2 py-1 rounded-md text-xs text-gray-500 italic z-10">
+                {question.type}
+              </div>
+
+              {/* Left Column: Icon and Dynamic Title */}
+              <div className="flex-shrink-0 w-full lg:w-1/4 p-4 bg-white rounded-lg shadow-sm flex flex-col items-start text-left">
+                <span className="text-5xl mb-2">{question.icon}</span>
+                <h3 className="text-[11px] text-gray-500 break-words font-normal whitespace-pre-line">{question.questionText || question.title}</h3>
+                <button
+                  onClick={() => removeQuestion(question.id)}
+                  className="mt-4 px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition duration-200"
+                >
+                  Remove
+                </button>
+              </div>
+
+              {/* Middle Column: Question Card */}
+              <div className="flex-grow w-full lg:w-1/2 p-6 bg-white rounded-lg shadow-md space-y-4">
+                <textarea
+                  ref={questionTextRef}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-lg font-medium resize-none overflow-hidden"
+                  placeholder="Type your question here."
+                  value={question.questionText}
+                  onChange={(e) => {
+                    updateQuestion(question.id, 'questionText', e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = (e.target.scrollHeight) + 'px';
+                  }}
+                ></textarea>
+                {question.isRequired && <span className="text-blue-600 font-bold text-2xl ml-1">*</span>}
+                <textarea
+                  ref={descriptionRef}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-300 text-sm text-gray-600 resize-none overflow-hidden"
+                  placeholder="Description (optional)"
+                  value={question.description}
+                  onChange={(e) => {
+                    updateQuestion(question.id, 'description', e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = (e.target.scrollHeight) + 'px';
+                  }}
+                ></textarea>
+
+                {question.type === 'Multiple Choice (15 or less options)' && (
+                  <div className="space-y-3 mt-4">
+                    {question.options.map((option, idx) => (
+                      <div key={option.id} className="flex items-center space-x-2">
+                        <span className="font-bold text-gray-700">{option.id}.</span>
+                        <input
+                          type="text"
+                          className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          value={option.text}
+                          onChange={(e) => updateOption(question.id, option.id, e.target.value)}
+                          placeholder={`Option ${option.id}`}
+                        />
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addOption(question.id)}
+                      className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 text-sm"
+                    >
+                      Add choice
+                    </button>
+                  </div>
+                )}
+
+                {question.type === 'Multiple choice (more than 15)' && (
+                  <div className="mt-4">
+                    <div className="p-3 bg-gray-100 rounded-lg text-gray-400 italic text-base flex justify-between items-center">
+                      <span>Type or select an option</span>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Edit choices
+                      </button>
+                      <span className="text-gray-600 text-sm">{question.options.length} options in list</span>
+                    </div>
+                  </div>
+                )}
+
+                {question.type === 'Address' && (
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <label htmlFor={`address-line1-${question.id}`} className="block text-sm font-medium text-gray-400">Address line 1</label>
+                      <input
+                        type="text"
+                        id={`address-line1-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.addressLine1 || 'Address line 1'}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`address-line2-${question.id}`} className="block text-sm font-medium text-gray-400">Address line 2</label>
+                      <input
+                        type="text"
+                        id={`address-line2-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.addressLine2 || 'Address line 2'}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`city-${question.id}`} className="block text-sm font-medium text-gray-400">City/Town</label>
+                      <input
+                        type="text"
+                        id={`city-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.city || 'City/Town'}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`state-region-${question.id}`} className="block text-sm font-medium text-gray-400">State/Region/Province</label>
+                      <input
+                        type="text"
+                        id={`state-region-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.stateRegionProvince || 'State/Region/Province'}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`zip-postcode-${question.id}`} className="block text-sm font-medium text-gray-400">Zip/Post code</label>
+                      <input
+                        type="text"
+                        id={`zip-postcode-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.zipPostCode || 'Zip/Post code'}
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor={`country-${question.id}`} className="block text-sm font-medium text-gray-400">Country</label>
+                      <input
+                        type="text"
+                        id={`country-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.addressFields.country || 'Country'}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {question.type === 'Mobile number' && (
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <label htmlFor={`mobile-number-placeholder-${question.id}`} className="block text-sm font-medium text-gray-400">Mobile/cell number (include country code)</label>
+                      <input
+                        type="text"
+                        id={`mobile-number-placeholder-${question.id}`}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-400 cursor-default focus:outline-none focus:ring-0 focus:border-transparent"
+                        value={question.mobileNumberPlaceholder || '+44 780049330'}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {question.type === 'Photo Upload' && (
+                  <div className="mt-4">
+                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-100 text-gray-400 cursor-default" style={{ minHeight: '150px' }}>
+                      <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      <span className="text-sm">Choose file</span>
+                      <span className="text-xs">Size limit: 10MB</span>
+                    </div>
+                  </div>
+                )}
+
+                {question.type !== 'Read Only Text' && !question.type.includes('Multiple choice') && question.type !== 'Address' && question.type !== 'Mobile number' && question.type !== 'Photo Upload' && (
+                  <div className="mt-4 p-3 bg-gray-100 rounded-lg text-gray-400 italic text-base">
+                    {question.answerPlaceholder}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Settings */}
+              <div className="flex-shrink-0 w-full lg:w-1/4 p-6 bg-white rounded-lg shadow-md space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-medium text-gray-700">Required</span>
+                  <label htmlFor={`required-toggle-${question.id}`} className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id={`required-toggle-${question.id}`}
+                      className="sr-only peer"
+                      checked={question.isRequired}
+                      onChange={(e) => updateQuestion(question.id, 'isRequired', e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {/* Multiple Selection Toggle for both Multiple Choice types */}
+                {(question.type === 'Multiple Choice (15 or less options)' || question.type === 'Multiple choice (more than 15)') && (
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="text-lg font-medium text-gray-700">Multiple selection</span>
+                    <label htmlFor={`multiple-select-toggle-${question.id}`} className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id={`multiple-select-toggle-${question.id}`}
+                        className="sr-only peer"
+                        checked={question.isMultipleSelection}
+                        onChange={(e) => updateQuestion(question.id, 'isMultipleSelection', e.target.checked)}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <span className="text-lg font-medium text-gray-700 block mb-2">Add a picture</span>
+                  {question.image ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-600">Picture.jpg</span>
+                      <button
+                        onClick={handleImageRemove}
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="text-blue-600 hover:underline cursor-pointer text-sm">
+                      Upload
+                      <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <AddChoicesModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveChoices}
+                initialChoices={question.options}
+              />
+            </div>
+          );
+        };
+
+
+        // Creator (Frontstage) Page Component
+        const CreatorPage = ({ setCurrentPage, creators, surveyData }) => {
+          const [creatorNameInput, setCreatorNameInput] = useState('');
+          const [foundCreator, setFoundCreator] = useState(null);
+          const [searchMessage, setSearchMessage] = useState('');
+          const [readOnlyAcknowledged, setReadOnlyAcknowledged] = useState({});
+          const [selectedOptions, setSelectedOptions] = useState({});
+          const [dropdownOpen, setDropdownOpen] = useState({});
+          const [uploadedFiles, setUploadedFiles] = useState({});
+          const [addressUpToDate, setAddressUpToDate] = useState({});
+          const [mobileUpToDate, setMobileUpToDate] = useState({});
+          const [replaceAddress, setReplaceAddress] = useState({});
+          const [replaceMobile, setReplaceMobile] = useState({});
+
+          // State to hold editable address/mobile values
+          const [editableAddress, setEditableAddress] = useState({});
+          const [editableMobile, setEditableMobile] = useState({});
+
+
+          // Sample Kiehl's UK Branches for "Multiple choice (more than 15)"
+          const kiehlsBranches = [
+            "Kiehl's Regent Street", "Kiehl's Covent Garden", "Kiehl's Canary Wharf",
+            "Kiehl's Westfield London", "Kiehl's Westfield Stratford City", "Kiehl's King's Road",
+            "Kiehl's Carnaby Street", "Kiehl's Spitalfields", "Kiehl's Bond Street",
+            "Kiehl's Oxford Street", "Kiehl's Bluewater", "Kiehl's Manchester Arndale",
+            "Kiehl's Glasgow Buchanan Street", "Kiehl's Edinburgh George Street",
+            "Kiehl's Brighton", "Kiehl's Leeds Trinity", "Kiehl's Liverpool ONE",
+            "Kiehl's Birmingham Bullring", "Kiehl's Nottingham Victoria Centre",
+            "Kiehl's Bristol Cabot Circus", "Kiehl's Cambridge Grand Arcade",
+            "Kiehl's Newcastle Eldon Square", "Kiehl's Dublin Grafton Street",
+            "Kiehl's Belfast Victoria Square", "Kiehl's Cardiff St David's"
+          ].map((branch, index) => ({ id: `K${index}`, text: branch }));
+
+
+          const handleFindProfile = () => {
+            if (!creatorNameInput) {
+              setSearchMessage("Please enter a name to begin.");
+              setFoundCreator(null);
+              return;
+            }
+
+            const found = creators.find(
+              (c) => c.name.toLowerCase() === creatorNameInput.toLowerCase()
+            );
+
+            if (found) {
+              setFoundCreator(found);
+              setSearchMessage('');
+              const initialAcknowledgedState = {};
+              const initialSelectedOptions = {};
+              const initialUploadedFiles = {};
+              const initialAddressUpToDate = {};
+              const initialMobileUpToDate = {};
+              const initialReplaceAddress = {};
+              const initialReplaceMobile = {};
+              const initialEditableAddress = {};
+              const initialEditableMobile = {};
+
+              surveyData?.questions.forEach(q => {
+                if (q.type === 'Read Only Text' && q.isRequired) {
+                  initialAcknowledgedState[q.id] = false;
+                }
+                if (q.type.includes('Multiple Choice')) {
+                  initialSelectedOptions[q.id] = q.isMultipleSelection ? [] : '';
+                }
+                if (q.type === 'Photo Upload') {
+                  initialUploadedFiles[q.id] = null;
+                }
+                if (q.type === 'Address') {
+                  const creatorAddress = found.address;
+                  if (creatorAddress) {
+                    const [line1, line2, city, region, postcode, country] = creatorAddress.split(', ').map(s => s.trim());
+                    initialEditableAddress[q.id] = {
+                      addressLine1: line1 || '', addressLine2: line2 || '', city: city || '',
+                      stateRegionProvince: region || '', zipPostCode: postcode || '', country: country || ''
+                    };
+                    initialAddressUpToDate[q.id] = 'Yes';
+                  } else {
+                    initialEditableAddress[q.id] = {
+                      addressLine1: '', addressLine2: '', city: '',
+                      stateRegionProvince: '', zipPostCode: '', country: ''
+                    };
+                    initialAddressUpToDate[q.id] = '';
+                  }
+                  initialReplaceAddress[q.id] = false;
+                }
+                if (q.type === 'Mobile number') {
+                  const creatorMobile = found.mobile;
+                  if (creatorMobile) {
+                    initialEditableMobile[q.id] = creatorMobile;
+                    initialMobileUpToDate[q.id] = 'Yes';
+                  } else {
+                    initialEditableMobile[q.id] = '';
+                    initialMobileUpToDate[q.id] = '';
+                  }
+                  initialReplaceMobile[q.id] = false;
+                }
+              });
+              setReadOnlyAcknowledged(initialAcknowledgedState);
+              setSelectedOptions(initialSelectedOptions);
+              setUploadedFiles(initialUploadedFiles);
+              setAddressUpToDate(initialAddressUpToDate);
+              setMobileUpToDate(initialMobileUpToDate);
+              setReplaceAddress(initialReplaceAddress);
+              setReplaceMobile(initialReplaceMobile);
+              setEditableAddress(initialEditableAddress);
+              setEditableMobile(initialEditableMobile);
+
+            } else {
+              setFoundCreator(null);
+              setSearchMessage("No creator found with that name. Please try again.");
+            }
+          };
+
+          const handleAcknowledgementChange = (questionId, isChecked) => {
+            setReadOnlyAcknowledged(prev => ({
+              ...prev,
+              [questionId]: isChecked
+            }));
+          };
+
+          const handleOptionChange = (questionId, optionId, isMultipleSelection) => {
+            setSelectedOptions(prev => {
+              if (isMultipleSelection) {
+                const currentSelections = prev[questionId] || [];
+                if (currentSelections.includes(optionId)) {
+                  return {
+                    ...prev,
+                    [questionId]: currentSelections.filter(id => id !== optionId)
+                  };
+                } else {
+                  return {
+                    ...prev,
+                    [questionId]: [...currentSelections, optionId]
+                  };
+                }
+              } else {
+                return {
+                  ...prev,
+                  [questionId]: optionId
+                };
+              }
+            });
+          };
+
+          const handleDropdownToggle = (questionId) => {
+            setDropdownOpen(prev => ({
+              ...prev,
+              [questionId]: !prev[questionId]
+            }));
+          };
+
+          const handleRemoveChip = (questionId, optionId) => {
+            setSelectedOptions(prev => ({
+              ...prev,
+              [questionId]: prev[questionId].filter(id => id !== optionId)
+            }));
+          };
+
+          const handleCreatorPhotoUpload = (questionId, event) => {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setUploadedFiles(prev => ({
+                  ...prev,
+                  [questionId]: {
+                    url: "https://i.ibb.co/L51t08r/googly-eyes.png",
+                    name: file.name
+                  }
+                }));
+              };
+              reader.readAsDataURL(file);
+            }
+          };
+
+          const handleCreatorPhotoRemove = (questionId) => {
+            setUploadedFiles(prev => ({
+              ...prev,
+              [questionId]: null
+            }));
+          };
+
+          const handleAddressUpToDateChange = (questionId, value) => {
+            setAddressUpToDate(prev => ({ ...prev, [questionId]: value }));
+            if (value === 'Yes') {
+              setReplaceAddress(prev => ({ ...prev, [questionId]: false }));
+            }
+          };
+
+          const handleReplaceAddressChange = (questionId, isChecked) => {
+            setReplaceAddress(prev => ({ ...prev, [questionId]: isChecked }));
+          };
+
+          const handleEditableAddressChange = (questionId, fieldName, value) => {
+            setEditableAddress(prev => ({
+              ...prev,
+              [questionId]: {
+                ...prev[questionId],
+                [fieldName]: value
+              }
+            }));
+          };
+
+          const handleMobileUpToDateChange = (questionId, value) => {
+            setMobileUpToDate(prev => ({ ...prev, [questionId]: value }));
+            if (value === 'Yes') {
+              setReplaceMobile(prev => ({ ...prev, [questionId]: false }));
+            }
+          };
+
+          const handleReplaceMobileChange = (questionId, isChecked) => {
+            setReplaceMobile(prev => ({ ...prev, [questionId]: isChecked }));
+          };
+
+          const handleEditableMobileChange = (questionId, value) => {
+            setEditableMobile(prev => ({
+              ...prev,
+              [questionId]: value
+            }));
+          };
+
+
+          const renderQuestionInput = (question) => {
+            if (question.type === 'Read Only Text') {
+              return (
+                <div className="p-3 bg-gray-100 rounded-lg text-gray-700">
+                  {question.isRequired && (
+                    <div className="mt-4 flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`read-only-ack-${question.id}`}
+                        className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                        checked={readOnlyAcknowledged[question.id] || false}
+                        onChange={(e) => handleAcknowledgementChange(question.id, e.target.checked)}
+                      />
+                      <label htmlFor={`read-only-ack-${question.id}`} className="ml-2 text-gray-800">
+                        Yep, understood
+                      </label>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            if (question.type === 'Multiple Choice (15 or less options)') {
+              const currentSelection = selectedOptions[question.id];
+              return (
+                <div className={`mt-4 ${question.isMultipleSelection ? 'flex flex-wrap gap-2' : 'space-y-2'}`}>
+                  {question.options.map((option) => (
+                    <div key={option.id}>
+                      {question.isMultipleSelection ? (
+                        <button
+                          className={`flex items-center px-4 py-2 rounded-full border transition duration-200 ease-in-out
+                            ${currentSelection.includes(option.id)
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                              : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200'
+                            }`}
+                          onClick={() => handleOptionChange(question.id, option.id, true)}
+                        >
+                          {currentSelection.includes(option.id) && <span className="mr-2 text-lg">✓</span>}
+                          <span>{option.text}</span>
+                        </button>
+                      ) : (
+                        <label className="inline-flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`mc-option-${question.id}`}
+                            value={option.id}
+                            checked={currentSelection === option.id}
+                            onChange={() => handleOptionChange(question.id, option.id, false)}
+                            className="form-radio h-5 w-5 text-blue-600"
+                          />
+                          <span className="ml-2 text-gray-800">{option.text}</span>
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+
+            if (question.type === 'Multiple choice (more than 15)') {
+              const currentSelection = selectedOptions[question.id];
+              const optionsToDisplay = question.options.length > 0 ? question.options : kiehlsBranches;
+
+              return (
+                <div className="relative mt-4">
+                  {question.isMultipleSelection && currentSelection && currentSelection.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2 p-2 border border-gray-300 rounded-lg">
+                      {currentSelection.map(selectedId => {
+                        const selectedOption = optionsToDisplay.find(opt => opt.id === selectedId);
+                        return selectedOption ? (
+                          <span key={selectedId} className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
+                            {selectedOption.text}
+                            <button
+                              onClick={() => handleRemoveChip(question.id, selectedId)}
+                              className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                            >
+                              x
+                            </button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+
+                  <div
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white flex justify-between items-center cursor-pointer"
+                    onClick={() => handleDropdownToggle(question.id)}
+                  >
+                    {question.isMultipleSelection ? (
+                      <span className="text-gray-500">Select options...</span>
+                    ) : (
+                      <span className="text-gray-800">
+                        {optionsToDisplay.find(opt => opt.id === currentSelection)?.text || 'Type or select an option'}
+                      </span>
+                    )}
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+
+                  {dropdownOpen[question.id] && (
+                    <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                      {optionsToDisplay.map((option) => (
+                        <div
+                          key={option.id}
+                          className={`px-4 py-2 cursor-pointer hover:bg-gray-100 flex justify-between items-center
+                            ${question.isMultipleSelection && selectedOptions[question.id]?.includes(option.id) ? 'bg-blue-50 font-medium' : ''}`}
+                          onClick={() => handleOptionChange(question.id, option.id, question.isMultipleSelection)}
+                        >
+                          <span>{option.text}</span>
+                          {question.isMultipleSelection && selectedOptions[question.id]?.includes(option.id) && (
+                            <span className="text-blue-600">✓</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            if (question.type === 'Address') {
+              const isAddressKnown = foundCreator && foundCreator.address;
+              const currentAddressState = editableAddress[question.id] || {};
+              const isUpToDate = addressUpToDate[question.id];
+
+              return (
+                <div className="space-y-3 mt-4">
+                  <div>
+                    <label htmlFor={`address-line1-${question.id}`} className="block text-sm font-medium text-gray-700">Address line 1</label>
+                    <input
+                      type="text"
+                      id={`address-line1-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter Address line 1'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.addressLine1 : currentAddressState.addressLine1}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'addressLine1', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`address-line2-${question.id}`} className="block text-sm font-medium text-gray-700">Address line 2</label>
+                    <input
+                      type="text"
+                      id={`address-line2-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter Address line 2'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.addressLine2 : currentAddressState.addressLine2}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'addressLine2', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`city-${question.id}`} className="block text-sm font-medium text-gray-700">City/Town</label>
+                    <input
+                      type="text"
+                      id={`city-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter City/Town'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.city : currentAddressState.city}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'city', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`state-region-${question.id}`} className="block text-sm font-medium text-gray-700">State/Region/Province</label>
+                    <input
+                      type="text"
+                      id={`state-region-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter State/Region/Province'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.stateRegionProvince : currentAddressState.stateRegionProvince}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'stateRegionProvince', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`zip-postcode-${question.id}`} className="block text-sm font-medium text-gray-700">Zip/Post code</label>
+                    <input
+                      type="text"
+                      id={`zip-postcode-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter Zip/Post code'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.zipPostCode : currentAddressState.zipPostCode}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'zipPostCode', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`country-${question.id}`} className="block text-sm font-medium text-gray-700">Country</label>
+                    <input
+                      type="text"
+                      id={`country-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'Enter Country'}
+                      value={isAddressKnown && isUpToDate === 'Yes' ? currentAddressState.country : currentAddressState.country}
+                      onChange={(e) => handleEditableAddressChange(question.id, 'country', e.target.value)}
+                      readOnly={isAddressKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+
+                  {isAddressKnown && (
+                    <div className="mt-4">
+                      <p className="text-gray-700 mb-2">Is this still correct / up to date?</p>
+                      <div className="flex space-x-4">
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name={`address-uptodate-${question.id}`}
+                            value="Yes"
+                            checked={isUpToDate === 'Yes'}
+                            onChange={(e) => handleAddressUpToDateChange(question.id, e.target.value)}
+                            className="form-radio h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-2 text-gray-800">Yes</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name={`address-uptodate-${question.id}`}
+                            value="No"
+                            checked={isUpToDate === 'No'}
+                            onChange={(e) => handleAddressUpToDateChange(question.id, e.target.value)}
+                            className="form-radio h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-2 text-gray-800">No</span>
+                        </label>
+                      </div>
+                      {isUpToDate === 'No' && (
+                        <div className="mt-3 flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`replace-address-${question.id}`}
+                            className="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                            checked={replaceAddress[question.id] || false}
+                            onChange={(e) => handleReplaceAddressChange(question.id, e.target.checked)}
+                          />
+                          <label htmlFor={`replace-address-${question.id}`} className="ml-2 text-gray-800">
+                            Replace what's on my profile
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            if (question.type === 'Mobile number') {
+              const isMobileKnown = foundCreator && foundCreator.mobile;
+              const currentMobileState = editableMobile[question.id] || '';
+              const isUpToDate = mobileUpToDate[question.id];
+
+              return (
+                <div className="space-y-3 mt-4">
+                  <div>
+                    <label htmlFor={`mobile-number-${question.id}`} className="block text-sm font-medium text-gray-700">Mobile/cell number (include country code)</label>
+                    <input
+                      type="tel"
+                      id={`mobile-number-${question.id}`}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={'e.g., +44 780049330'}
+                      value={isMobileKnown && isUpToDate === 'Yes' ? currentMobileState : currentMobileState}
+                      onChange={(e) => handleEditableMobileChange(question.id, e.target.value)}
+                      readOnly={isMobileKnown && isUpToDate === 'Yes'}
+                    />
+                  </div>
+
+                  {isMobileKnown && (
+                    <div className="mt-4">
+                      <p className="text-gray-700 mb-2">Is this still correct / up to date?</p>
+                      <div className="flex space-x-4">
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name={`mobile-uptodate-${question.id}`}
+                            value="Yes"
+                            checked={isUpToDate === 'Yes'}
+                            onChange={(e) => handleMobileUpToDateChange(question.id, e.target.value)}
+                            className="form-radio h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-2 text-gray-800">Yes</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input
+                            type="radio"
+                            name={`mobile-uptodate-${question.id}`}
+                            value="No"
+                            checked={isUpToDate === 'No'}
+                            onChange={(e) => handleMobileUpToDateChange(question.id, e.target.value)}
+                            className="form-radio h-4 w-4 text-blue-600"
+                          />
+                          <span className="ml-2 text-gray-800">No</span>
+                        </label>
+                      </div>
+                      {isUpToDate === 'No' && (
+                        <div className="mt-3 flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`replace-mobile-${question.id}`}
+                            className="form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                            checked={replaceMobile[question.id] || false}
+                            onChange={(e) => handleReplaceMobileChange(question.id, e.target.checked)}
+                          />
+                          <label htmlFor={`replace-mobile-${question.id}`} className="ml-2 text-gray-800">
+                            Replace what's on my profile
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            if (question.type === 'Photo Upload') {
+              const uploadedFile = uploadedFiles[question.id];
+              return (
+                <div className="mt-4">
+                  {uploadedFile ? (
+                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 relative" style={{ minHeight: '150px' }}>
+                      <img src={uploadedFile.url} alt="Uploaded" className="max-w-full h-auto rounded-md mb-2" style={{ width: '200px' }} />
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-700">{uploadedFile.name}</span>
+                        <button
+                          onClick={() => handleCreatorPhotoRemove(question.id)}
+                          className="ml-2 text-red-600 hover:text-red-800 focus:outline-none"
+                        >
+                          x
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100 transition duration-200" style={{ minHeight: '150px' }}>
+                      <svg className="w-10 h-10 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                      <span className="text-sm text-gray-700">Choose file</span>
+                      <span className="text-xs text-gray-500">Size limit: 10MB</span>
+                      <input type="file" className="hidden" onChange={(e) => handleCreatorPhotoUpload(question.id, e)} accept="image/*" />
+                    </label>
+                  )}
+                </div>
+              );
+            }
+
+            switch (question.type) {
+              case 'Short Text Answer':
+              case 'Long Text Answer':
+                return (
+                  <textarea
+                    rows={question.type === 'Long Text Answer' ? 4 : 1}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={question.answerPlaceholder}
+                  ></textarea>
+                );
+              default:
+                return null;
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+              <div className="w-full max-w-4xl bg-white shadow-lg rounded-xl p-6 sm:p-8 lg:p-10">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Creator</h1>
+                  <button
+                    onClick={() => setCurrentPage('internal')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-200 ease-in-out"
+                  >
+                    View Internal (Create Questions)
+                  </button>
+                </div>
+
+                <div className="mb-8">
+                  <label htmlFor="creatorName" className="block text-lg font-medium text-gray-700 mb-2">Enter your name to begin</label>
+                  <div className="flex space-x-3">
+                    <input
+                      type="text"
+                      id="creatorName"
+                      className="flex-grow px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-lg"
+                      value={creatorNameInput}
+                      onChange={(e) => setCreatorNameInput(e.target.value)}
+                      placeholder="e.g., Creator 1"
+                    />
+                    <button
+                      onClick={handleFindProfile}
+                      className="px-6 py-3 bg-gray-700 text-white rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-75 transition duration-200 ease-in-out text-lg font-semibold"
+                    >
+                      Find my profile
+                    </button>
+                  </div>
+                  {searchMessage && <p className="mt-4 text-center text-sm text-red-600">{searchMessage}</p>}
+                </div>
+
+                {foundCreator && (
+                  <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
+                    <h2 className="text-2xl font-semibold text-blue-800 mb-4">Hello {foundCreator.name}!</h2>
+                    {surveyData ? (
+                      <>
+                        <p className="text-lg text-gray-700 mb-4">So pleased you are interested in <span className="font-bold text-blue-700">{surveyData.projectTitle}</span></p>
+                        <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
+                          <p className="text-lg font-medium text-gray-800 mb-2">This brief requires the following:</p>
+                          <p className="text-gray-700 whitespace-pre-line">{surveyData.briefRequirementSummary}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-lg text-gray-700 mb-4">No survey details available yet. Please check back later.</p>
+                    )}
+
+                    <div className="mt-8 border-t border-gray-200 pt-8">
+                      <h3 className="text-xl font-semibold text-gray-800 mb-4">Before we can proceed, please answer the following questions:</h3>
+                      {surveyData?.questions && surveyData.questions.length > 0 ? (
+                        <div className="space-y-6">
+                          {surveyData.questions.map((q, index) => (
+                            <div key={q.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 relative">
+                              {/* Question progress indicator */}
+                              <div className="absolute -top-3 -left-3 bg-blue-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md z-10">
+                                {index + 1} of {surveyData.questions.length} questions
+                              </div>
+                              <p className="text-lg font-medium text-gray-800 mb-2 whitespace-pre-line">
+                                {q.questionText}
+                                {q.isRequired && <span className="text-blue-600 font-bold text-2xl ml-1">*</span>}
+                              </p>
+                              {q.description && <p className="text-sm text-gray-600 mb-3 whitespace-pre-line">{q.description}</p>}
+                              {q.image && (
+                                <div className="mb-4">
+                                  <img src={q.image} alt="Question visual" className="max-w-full h-auto rounded-md" style={{ width: '400px' }} />
+                                </div>
+                              )}
+                              {renderQuestionInput(q)}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">No questions have been added yet. Please check the Internal page.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        // Render the App component into the root div
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
